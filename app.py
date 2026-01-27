@@ -1,28 +1,29 @@
+
 import streamlit as st
+import google.generativeai as genai
 
-# ஆப் தலைப்பு மற்றும் பக்கம் அமைப்பு
-st.set_page_config(page_title="Buvana AI", layout="centered")
-
+# தலைப்பு
 st.title("⚖️ Buvana AI - சட்ட உதவியாளர்")
 st.write("வணக்கம் புவனா! உங்கள் சட்ட ரீதியான சந்தேகங்களை இங்கே கேளுங்கள்.")
+
+# API Key செட்டிங்ஸ் (இதை Streamlit Secrets-ல் வைப்போம்)
+genai.configure(api_key=st.secrets["GOOGLE_API_KEY"])
+model = genai.GenerativeModel('gemini-pro')
 
 # மெசேஜ் பெட்டி
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-# பழைய உரையாடல்களைக் காட்டுதல்
 for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
 
-# பயனர் கேள்வி கேட்கும் இடம்
 if prompt := st.chat_input("இங்கே டைப் செய்யவும்..."):
+    st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"):
         st.markdown(prompt)
-    st.session_state.messages.append({"role": "user", "content": prompt})
 
-    # AI-ன் பதில் (உதாரணத்திற்கு)
-    response = f"உங்கள் கேள்வி: '{prompt}'. இதற்கான விரிவான பதிலை நான் தயார் செய்கிறேன்..."
+    response = model.generate_content(prompt)
     with st.chat_message("assistant"):
-        st.markdown(response)
-    st.session_state.messages.append({"role": "assistant", "content": response})
+        st.markdown(response.text)
+    st.session_state.messages.append({"role": "assistant", "content": response.text})
